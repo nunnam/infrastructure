@@ -71,12 +71,12 @@ jobs:
     - run: npm ci
 
     - name: linting stage
-      if: github.event.inputs.linting
+      if: ${{ github.event.inputs.linting != ''  || inputs.linting != '' }}
       run: npm run lint
 
     - name: unit tests
       if: ${{ github.event.inputs.unittest-npm-cmd != ''  || inputs.unittest-npm-cmd != '' }}
-      run: npm "{{ inputs.unittest-npm-cmd }}"
+      run: npm "${{ inputs.unittest-npm-cmd }}"
     
     - name: sonar-scanner
       if: github.event.inputs.sonar-scanner-enabled != ''
