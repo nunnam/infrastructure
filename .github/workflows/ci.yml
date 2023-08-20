@@ -46,6 +46,9 @@ jobs:
   deploy:
     name: deploy
     runs-on: self-hosted
+    permissions:
+      id-token: write
+      contents: read
     strategy:
       matrix:
         node-version: ["${{inputs.nodejs-version}}"]
