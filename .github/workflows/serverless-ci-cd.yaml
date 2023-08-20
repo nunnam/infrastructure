@@ -40,7 +40,7 @@ on:
         type: string
       
     secrets:
-      GITHUB_TOKEN:
+      ENV_GITHUB_TOKEN:
         required: false
       SONAR_TOKEN:
         required: false
@@ -84,7 +84,7 @@ jobs:
     - name: sonar-scanner
       if: github.event.inputs.sonar-scanner-enabled != ''
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GITHUB_TOKEN: ${{ secrets.ENV_GITHUB_TOKEN }}
         # add SONAR_TOKEN in the secret of the repository
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: |
