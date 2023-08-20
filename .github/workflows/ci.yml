@@ -57,7 +57,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     
     - name: configure aws credentials
-      if: github.event.inputs.aws-role-to-assume
+      if: ${{ github.event.inputs.aws-role-to-assume != ''  || inputs.aws-role-to-assume != '' }}
       uses: aws-actions/configure-aws-credentials@v1
       with:
         role-to-assume: ${{inputs.nodejs-version}}
@@ -79,7 +79,7 @@ jobs:
       run: npm "${{ inputs.unittest-npm-cmd }}"
     
     - name: sonar-scanner
-      if: github.event.inputs.sonar-scanner-enabled != ''
+      if: ${{ github.event.inputs.sonar-scanner-enabled != ''  || inputs.sonar-scanner-enabled != '' }}      
       env:
         GITHUB_TOKEN: ${{ secrets.ENV_GITHUB_TOKEN }}
         # add SONAR_TOKEN in the secret of the repository
@@ -96,12 +96,12 @@ jobs:
         retention-days: "${{ inputs.retention-days }}"
 
     - name: serverless deploy
-      if: github.event.inputs.sls-deploy
+      if: ${{ github.event.inputs.sls-deploy != ''  || inputs.sls-deploy != '' }}
       run: |
         export AWS_SDK_LOAD_CONFIG=1
         serverless deploy --config "${{ inputs.serverless-config-file }}"
         
     - name: integration tests
-      if: github.event.inputs.integration-tests-cmd != ''
+      if: ${{ github.event.inputs.integration-tests-cmd != ''  || inputs.integration-tests-cmd != '' }}
       run: |
         npm run "${{ inputs.integration-tests-cmd }}"
