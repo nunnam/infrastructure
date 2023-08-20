@@ -1,11 +1,8 @@
-name: Deploy dev branch
+name: Serverless CI
 
 on:
   workflow_call:
     inputs:
-      runner-label:
-        type: string
-        default: ubuntu-latest
       nodejs-version:
         default: 18.x
         type: string
