@@ -75,8 +75,8 @@ jobs:
       run: npm run lint
 
     - name: unit tests
-      if: github.event.inputs.unittest-npm-cmd
-      run: npm run "{{ inputs.unittest-npm-cmd }}"
+      if: ${{ github.event.inputs.unittest-npm-cmd }}
+      run: npm "{{ inputs.unittest-npm-cmd }}"
     
     - name: sonar-scanner
       if: github.event.inputs.sonar-scanner-enabled != ''
