@@ -57,7 +57,7 @@ jobs:
         node-version: ${{ matrix.node-version }}
     
     - name: configure aws credentials
-      if: github.event.inputs.aws-role-to-assume != ''
+      if: github.event.inputs.aws-role-to-assume
       uses: aws-actions/configure-aws-credentials@v1
       with:
         role-to-assume: ${{inputs.nodejs-version}}
@@ -75,7 +75,7 @@ jobs:
       run: npm run lint
 
     - name: unit tests
-      if: github.event.inputs.unittest-npm-cmd != ''
+      if: github.event.inputs.unittest-npm-cmd
       run: npm run "{{ inputs.unittest-npm-cmd }}"
     
     - name: sonar-scanner
