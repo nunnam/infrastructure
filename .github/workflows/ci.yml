@@ -1,1 +1,110 @@
+name: Deploy dev branch
 
+on:
+  workflow_call:
+    inputs:
+      runner-label:
+        type: string
+        default: ubuntu-latest
+      nodejs-version:
+        default: 18.x
+        type: string
+      aws-role-to-assume:
+        type: string
+      aws-region:
+        type: string
+        default: "eu-central-1"
+      linting:
+        type: boolean
+        default: false
+      unittest-npm-cmd:
+        type: string
+      sonar-scanner-enabled:
+        type: string
+      serverless-version:
+        type: string
+        default: 2.72.3
+      retention-days:
+        type: string
+        default: "5"
+      artifact_path:
+        type: string
+        default: "output/test/code-coverage.html"
+      sls-deploy:
+        type: boolean
+        default: false
+      sls-config-file:
+        type: string
+        default: "serverless.yaml"
+      integration-tests-cmd:
+        type: string
+      
+    secrets:
+      ENV_GITHUB_TOKEN:
+        required: false
+      SONAR_TOKEN:
+        required: false
+    
+jobs:
+  deploy:
+    name: deploy
+    runs-on: "{{ inputs.runner-label }}"
+    strategy:
+      matrix:
+        node-version: ["${{inputs.nodejs-version}}"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+    
+    - name: configure aws credentials
+      if: github.event.inputs.aws-role-to-assume != ''
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{inputs.nodejs-version}}
+        role-session-name: <session name (our wish)>
+        aws-region: "${{ inputs.aws-region }}"
+    
+    - run: |
+        npm install -g serverless@"${{inputs.serverless-version}}"
+        npm install -g serverless-dotenv-plugin
+
+    - run: npm ci
+
+    - name: linting stage
+      if: github.event.inputs.linting
+      run: npm run lint
+
+    - name: unit tests
+      if: github.event.inputs.unittest-npm-cmd != ''
+      run: npm run "{{ inputs.unittest-npm-cmd }}"
+    
+    - name: sonar-scanner
+      if: github.event.inputs.sonar-scanner-enabled != ''
+      env:
+        GITHUB_TOKEN: ${{ secrets.ENV_GITHUB_TOKEN }}
+        # add SONAR_TOKEN in the secret of the repository
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        npm install -g sonarqube-scanner
+        sonar-scanner
+
+    - name: Archive code coverage results
+      uses: actions/upload-artifact@v3
+      with:
+        name: code-coverage-report
+        path: "${{ inputs.artifact_path }}"
+        retention-days: "${{ inputs.retention-days }}"
+
+    - name: serverless deploy
+      if: github.event.inputs.sls-deploy
+      run: |
+        export AWS_SDK_LOAD_CONFIG=1
+        serverless deploy --config "${{ inputs.serverless-config-file }}"
+        
+    - name: integration tests
+      if: github.event.inputs.integration-tests-cmd != ''
+      run: |
+        npm run "${{ inputs.integration-tests-cmd }}"
