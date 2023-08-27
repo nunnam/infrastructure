@@ -1,0 +1,77 @@
+name: PHP Application CI
+
+on:
+  workflow_call:
+    inputs:
+      php-version:
+        default: '8.2'
+        type: string
+      aws-role-to-assume:
+        type: string
+      aws-region:
+        type: string
+        default: "eu-central-1"
+      tools:
+        type: string
+        default: "php-cs-fixer, phpunit, composer:v2"
+      composer-install-command:
+        type: string
+        default: "composer install --prefer-dist --no-ansi --no-interaction --no-progress --no-scripts"
+      phpcs:
+        type: boolean
+        default: false
+      phpcd-directory:
+        type: string
+      codecept:
+        type: boolean
+        default: false
+      
+    secrets:
+      ENV_GITHUB_TOKEN:
+        required: false
+      SONAR_TOKEN:
+        required: false
+    
+jobs:
+  deploy:
+    name: deploy
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    strategy:
+      matrix:
+        php-version: ["${{inputs.php-version}}"]
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup PHP with tools
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: ${{ input.php-version }}
+        tools: ${{ input.tools}}
+    
+    - name: configure aws credentials
+      if: ${{ github.event.inputs.aws-role-to-assume != ''  || inputs.aws-role-to-assume != '' }}
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        role-to-assume: ${{inputs.aws-role-to-assume}}
+        role-session-name: "github-actions-role"
+        aws-region: "${{ inputs.aws-region }}"
+
+    - name: Install Composer dependencies
+      run: ${{ input.composer-install-command }}
+
+    - name: PHP Code Sniffer
+      if: ${{ github.event.inputs.phpcs != ''  || inputs.phpcs != '' }}
+      run: phpcs --standard=TRG --extensions=php --runtime-set ignore_warnings_on_exit true app
+
+    - name: PHP Copy Paste Detector
+      if: ${{ github.event.inputs.phpcd-directory != ''  || inputs.phpcpd != '' }}
+      run: phpcpd ${{ input.phpcd-directory }}/ --min-lines=30
+
+    - name: PHP Codeception
+      if: ${{ github.event.inputs.codecept != ''  || inputs.codecept != '' }}
+      run: |
+        touch .env
+        codecept run --coverage-html --no-interaction --no-colors
+        
