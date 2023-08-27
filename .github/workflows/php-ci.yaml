@@ -25,6 +25,11 @@ on:
       codecept:
         type: boolean
         default: false
+      docker-build:
+        type: boolean
+        default: false
+      docker-image-repository:
+        type: string
       
     secrets:
       ENV_GITHUB_TOKEN:
@@ -74,4 +79,21 @@ jobs:
       run: |
         touch .env
         codecept run --coverage-html --no-interaction --no-colors
+        
+    - name: Login to Amazon ECR
+      if: ${{ github.event.inputs.aws-role-to-assume != ''  || inputs.aws-role-to-assume != '' }}
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v1
+      with:
+        mask-password: 'true'
+
+    - name: Build, tag, and push docker image to Amazon ECR
+      if: ${{ github.event.inputs.docker-image-repository != ''  || inputs.docker-image-repository != '' }}     
+      env:
+        REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        REPOSITORY: ${{ inputs.docker-image-repository }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        docker build -t $REGISTRY/$REPOSITORY:$IMAGE_TAG .
+        docker push $REGISTRY/$REPOSITORY:$IMAGE_TAG
         
