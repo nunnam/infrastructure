@@ -6,8 +6,8 @@ on:
       - main
           
 jobs:
-  deploy:
-    name: deploy
+  build:
+    name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -18,11 +18,9 @@ jobs:
       uses: actions/setup-node@v3
       with:
         node-version: ${{ matrix.node-version }}
-    
     - run: |
-        npm install -g serverless@"${{inputs.serverless-version}}"
-        npm install -g serverless-dotenv-plugin
-
+        npm install -g serverless
+        
     - name: install dependencies
       run: npm install
     
